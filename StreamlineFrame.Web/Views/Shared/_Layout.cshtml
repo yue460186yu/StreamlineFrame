@@ -1,0 +1,19 @@
+﻿@{
+    Layout = "~/Views/Shared/_BaseLayout.cshtml";
+}
+
+@section header {
+    <style>
+        body {
+            height: 100%;
+        }
+    </style>
+    @RenderSection("header", false)
+}
+
+@RenderSection("body", false)
+@RenderBody()
+
+@section scripts {
+    @RenderSection("scripts", false)
+}
