@@ -19,7 +19,7 @@ namespace StreamlineFrame.Web.Controllers
                 Name = "testName"
             };
             //new TestRepository().Insert(test);
-            new TestRepository().Get(x => x.Name == "testName" && x.Age == 1);
+            new TestRepository().Get(x => x.Name == "testName" && (x.Pyh == null || (new string[] { "s", "ss" }).Contains(x.Name)));
             return View();
         }
     }
