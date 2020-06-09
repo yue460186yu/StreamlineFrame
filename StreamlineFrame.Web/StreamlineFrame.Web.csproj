@@ -228,7 +228,7 @@
     <Compile Include="App_Start\WebApiConfig.cs" />
     <Compile Include="Common\Attribute\DBKeyAttribute.cs" />
     <Compile Include="Common\Attribute\DBNameAttribute.cs" />
-    <Compile Include="Common\Data\ExpressionHelper.cs" />
+    <Compile Include="Common\Utility\ExpressionHelper.cs" />
     <Compile Include="Common\Data\Repository\BaseRepository.cs" />
     <Compile Include="Common\Utility\PostDataUtil.cs" />
     <Compile Include="Common\Utility\IPHelper.cs" />

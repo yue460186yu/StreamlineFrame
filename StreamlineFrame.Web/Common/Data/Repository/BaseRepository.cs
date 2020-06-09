@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
-using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 
@@ -15,6 +14,14 @@ namespace StreamlineFrame.Web.Common
     public class BaseRepository<TModel>
          where TModel : class, new()
     {
+        //链接字符串
+        private readonly string ConnectionString;
+
+        public BaseRepository(string connectionString)
+        {
+            ConnectionString = connectionString;
+        }
+
         #region r
 
         /// <summary>
@@ -25,7 +32,7 @@ namespace StreamlineFrame.Web.Common
         /// <returns>是否包涵</returns>
         public bool Has(string sql, SqlParameter[] para)
         {
-            using (var reader = SqlHelper.ExecuteReader(SqlHelper.ConnectionString, CommandType.Text, sql, para))
+            using (var reader = SqlHelper.ExecuteReader(this.ConnectionString, CommandType.Text, sql, para))
                 return reader.HasRows;
         }
 
@@ -38,37 +45,11 @@ namespace StreamlineFrame.Web.Common
         public TModel Get(Expression<Func<TModel, bool>> exp)
         {
             //todo:解析exp转sql
-            var sql = "(";
-            sql += ExpressionToSql(exp.Body);
-            sql += ")";
-            return new TModel();
+            var sql = $"SELECT * FROM {this.GetDBName(typeof(TModel))} WHERE ";
+            sql += ExpressionHelper.ExpressionToSql(exp.Body);
+            return this.Get(sql, null);
         }
 
-        private string ExpressionToSql(Expression exp)
-        {
-            var sql = "";
-            var be = exp as BinaryExpression;
-            var left = be.Left;
-            var right = be.Right;
-            var type = be.NodeType;
-            //先处理左边
-            sql += ExpressionToSql(left);
-            sql += ExpressionHelper.GetOperator(type);
-            //再处理右边
-            string sbTmp = ExpressionToSql(right);
-            if (sbTmp == "null")
-            {
-                if (sql.EndsWith(" = "))
-                    sql = sql.Substring(0, sql.Length - 2) + " is null";
-                else if (sql.EndsWith(" <> "))
-                    sql = sql.Substring(0, sql.Length - 2) + " is not null";
-            }
-            else
-            {
-                sql += sbTmp;
-            }
-            return sql;
-        }
         /// <summary>
         /// 获取实体
         /// </summary>
@@ -77,7 +58,7 @@ namespace StreamlineFrame.Web.Common
         /// <returns></returns>
         public TModel Get(string sql, SqlParameter[] para)
         {
-            using (var reader = SqlHelper.ExecuteReader(SqlHelper.ConnectionString, CommandType.Text, sql, para))
+            using (var reader = SqlHelper.ExecuteReader(this.ConnectionString, CommandType.Text, sql, para))
             {
                 if (reader.Read())
                     return this.ModelFactory(reader);
@@ -95,7 +76,7 @@ namespace StreamlineFrame.Web.Common
         /// <returns></returns>
         public string GetField(string sql, SqlParameter[] para, string name)
         {
-            using (var reader = SqlHelper.ExecuteReader(SqlHelper.ConnectionString, CommandType.Text, sql, para))
+            using (var reader = SqlHelper.ExecuteReader(this.ConnectionString, CommandType.Text, sql, para))
                 return reader.Read() ? reader[name].ToString() : null;
         }
 
@@ -111,7 +92,7 @@ namespace StreamlineFrame.Web.Common
             if (string.IsNullOrWhiteSpace(sql))
                 sql = $"select * from {this.GetDBName(typeof(TModel))}";
 
-            using (var reader = SqlHelper.ExecuteReader(SqlHelper.ConnectionString, CommandType.Text, sql, null))
+            using (var reader = SqlHelper.ExecuteReader(this.ConnectionString, CommandType.Text, sql, null))
             {
                 if (reader.HasRows)
                 {
@@ -204,7 +185,7 @@ namespace StreamlineFrame.Web.Common
         /// <returns>添加成功行数</returns>
         public int Insert(string sql, SqlParameter[] para)
         {
-            return Convert.ToInt32(SqlHelper.ExecuteScalar(SqlHelper.ConnectionString, CommandType.Text, sql, para));
+            return Convert.ToInt32(SqlHelper.ExecuteScalar(this.ConnectionString, CommandType.Text, sql, para));
         }
 
         #endregion
@@ -219,7 +200,7 @@ namespace StreamlineFrame.Web.Common
         /// <returns>添加成功行数</returns>
         public int Update(string sql, SqlParameter[] para)
         {
-            return SqlHelper.ExecuteNonQuery(SqlHelper.ConnectionString, CommandType.Text, sql, para);
+            return SqlHelper.ExecuteNonQuery(this.ConnectionString, CommandType.Text, sql, para);
         }
 
         #endregion
@@ -259,7 +240,7 @@ namespace StreamlineFrame.Web.Common
         /// <returns>添加成功行数</returns>
         public int Delete(string sql, SqlParameter[] para)
         {
-            return SqlHelper.ExecuteNonQuery(SqlHelper.ConnectionString, CommandType.Text, sql, para);
+            return SqlHelper.ExecuteNonQuery(this.ConnectionString, CommandType.Text, sql, para);
         }
 
         #endregion

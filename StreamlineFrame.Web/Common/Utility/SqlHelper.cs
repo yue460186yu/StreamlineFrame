@@ -1,4 +1,3 @@
-using System.Configuration;
 using System.Data;
 using System.Data.SqlClient;
 
@@ -10,9 +9,6 @@ namespace StreamlineFrame.Web.Common
     /// </summary>
     public abstract class SqlHelper
     {
-        //Á´½Ó×Ö·û´®
-        public static readonly string ConnectionString = ConfigurationManager.ConnectionStrings["DB"].ConnectionString;
-
         #region ExecuteNonQuery
         /// <summary>
         /// Ö´ÐÐsqlÃüÁî
