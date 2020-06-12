@@ -7,7 +7,10 @@ using System.Web;
 
 namespace StreamlineFrame.Web.Repository
 {
-    public class TestRepository: BaseRepository<Test>
+    public class TestRepository : BaseRepository<Test>
     {
+        public TestRepository() : base("default")
+        {
+        }
     }
 }

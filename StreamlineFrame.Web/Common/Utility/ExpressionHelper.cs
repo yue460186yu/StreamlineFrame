@@ -73,6 +73,10 @@ namespace StreamlineFrame.Web.Common
             {
                 return ExpressionToSql((NewArrayExpression)exp);
             }
+            else if (exp is UnaryExpression)
+            {
+                return ExpressionToSql((UnaryExpression)exp);
+            }
 
             return sql;
         }
@@ -88,9 +92,9 @@ namespace StreamlineFrame.Web.Common
             if (sbTmp == "null")
             {
                 if (sql.EndsWith("= "))
-                    sql = Regex.Replace(sql, "=", "is null");
+                    sql = sql.Substring(0, sql.Length - 2) + "is null";
                 else if (sql.EndsWith("<> "))
-                    sql = Regex.Replace(sql, "<>", "is null");
+                    sql = sql.Substring(0, sql.Length - 3) + "is not null";
             }
             else
                 sql += sbTmp;
@@ -116,24 +120,41 @@ namespace StreamlineFrame.Web.Common
 
         public static string ExpressionToSql(MethodCallExpression mce)
         {
-            if (mce.Method.Name.Equals("Contains"))
-                return $"({ExpressionToSql(mce.Arguments[0])} in {ExpressionToSql(mce.Arguments[1])})";
-            else if (mce.Method.Name.Equals("EndsWith"))
-                return $"({ExpressionToSql(mce.Arguments[0])} not in %'{ExpressionToSql(mce.Arguments[1])})'";
-            else if (mce.Method.Name.Equals("StartsWith"))
-                return $"({ExpressionToSql(mce.Arguments[0])} like '{ExpressionToSql(mce.Arguments[1])}'%)";
+            if (mce.Arguments.Count==1)
+            {
+                if (mce.Method.Name.Equals("Contains"))
+                    return $"({ExpressionToSql(mce.Object)} in {ExpressionToSql(mce.Arguments[0])})";
+                else if (mce.Method.Name.Equals("EndsWith"))
+                    return $"({ExpressionToSql(mce.Object)} like %'{ExpressionToSql(mce.Arguments[0])})'";
+                else if (mce.Method.Name.Equals("StartsWith"))
+                    return $"({ExpressionToSql(mce.Object)} like '{ExpressionToSql(mce.Arguments[0])}'%)";
+            }
+            else if(mce.Arguments.Count == 2)
+            {
+                if (mce.Method.Name.Equals("Contains"))
+                    return $"({ExpressionToSql(mce.Arguments[1])} in {ExpressionToSql(mce.Arguments[0])})";
+                else if (mce.Method.Name.Equals("EndsWith"))
+                    return $"({ExpressionToSql(mce.Arguments[1])} like %'{ExpressionToSql(mce.Arguments[0])})'";
+                else if (mce.Method.Name.Equals("StartsWith"))
+                    return $"({ExpressionToSql(mce.Arguments[1])} like '{ExpressionToSql(mce.Arguments[0])}'%)";
+            }
+            
             return null;
         }
 
         public static string ExpressionToSql(NewArrayExpression nae)
         {
             var tmpstr = new StringBuilder();
-            foreach (Expression ex in nae.Expressions)
+            foreach (var ex in nae.Expressions)
             {
                 tmpstr.Append(ExpressionToSql(ex));
                 tmpstr.Append(",");
             }
             return tmpstr.ToString(0, tmpstr.Length - 1);
+        }
+        public static string ExpressionToSql(UnaryExpression ue)
+        {
+            return ExpressionToSql(ue.Operand);
         }
     }
 }

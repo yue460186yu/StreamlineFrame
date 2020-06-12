@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Data;
 using System.Data.SqlClient;
 using System.Linq.Expressions;
@@ -17,9 +18,9 @@ namespace StreamlineFrame.Web.Common
         //链接字符串
         private readonly string ConnectionString;
 
-        public BaseRepository(string connectionString)
+        public BaseRepository(string db)
         {
-            ConnectionString = connectionString;
+            ConnectionString = ConfigurationManager.ConnectionStrings[db].ConnectionString;
         }
 
         #region r
