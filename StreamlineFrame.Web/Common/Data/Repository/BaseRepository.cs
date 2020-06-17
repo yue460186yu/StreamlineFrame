@@ -272,7 +272,7 @@ namespace StreamlineFrame.Web.Common
                 if (this.IsKey(property))
                     where.Add($"{this.GetDBName(property)} = {property.GetValue(model)}");
                 else
-                    set.Add($"{this.GetDBName(property)} = {property.GetValue(model)}");
+                    if (property.GetValue(model) != null) set.Add($"{this.GetDBName(property)} = {property.GetValue(model)}");
             }
 
             var sql = string.Format(this.SqlUpdate, this.GetDBName(typeof(TModel)), string.Join(", ", set), string.Join(" and ", where));
@@ -320,7 +320,7 @@ namespace StreamlineFrame.Web.Common
             {
                 if (this.IsKey(property))
                 {
-                    where.Add($"this.GetDBName(property) = @{property.Name}");
+                    where.Add($"{this.GetDBName(property)} = @{property.Name}");
                     para.Add(new SqlParameter($"@{property.Name}", property.GetValue(model)));
                 }
             }
