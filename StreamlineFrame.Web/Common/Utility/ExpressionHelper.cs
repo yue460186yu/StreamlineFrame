@@ -2,7 +2,6 @@
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
-using System.Text.RegularExpressions;
 
 namespace StreamlineFrame.Web.Common
 {
@@ -120,26 +119,29 @@ namespace StreamlineFrame.Web.Common
 
         public static string ExpressionToSql(MethodCallExpression mce)
         {
-            if (mce.Arguments.Count==1)
+            switch (mce.Method.Name)
             {
-                if (mce.Method.Name.Equals("Contains"))
-                    return $"({ExpressionToSql(mce.Object)} in {ExpressionToSql(mce.Arguments[0])})";
-                else if (mce.Method.Name.Equals("EndsWith"))
-                    return $"({ExpressionToSql(mce.Object)} like %'{ExpressionToSql(mce.Arguments[0])})'";
-                else if (mce.Method.Name.Equals("StartsWith"))
-                    return $"({ExpressionToSql(mce.Object)} like '{ExpressionToSql(mce.Arguments[0])}'%)";
+                case "Contains":
+                    if (mce.Arguments.Count == 1)
+                        return $"({ExpressionToSql(mce.Object)} in {ExpressionToSql(mce.Arguments[0])})";
+                    else
+                        return $"({ExpressionToSql(mce.Arguments[1])} in {ExpressionToSql(mce.Arguments[0])})";
+
+                case "StartsWith":
+                    if (mce.Arguments.Count == 1)
+                        return $"({ExpressionToSql(mce.Object)} like '{ExpressionToSql(mce.Arguments[0])}'%)";
+                    else
+                        return $"({ExpressionToSql(mce.Arguments[1])} like '{ExpressionToSql(mce.Arguments[0])}'%)";
+
+                case "EndsWith":
+                    if (mce.Arguments.Count == 1)
+                        return $"({ExpressionToSql(mce.Object)} like %'{ExpressionToSql(mce.Arguments[0])})'";
+                    else
+                        return $"({ExpressionToSql(mce.Arguments[1])} like %'{ExpressionToSql(mce.Arguments[0])})'";
+
+                default:
+                    throw new NotSupportedException(mce.NodeType + " is not supported!");
             }
-            else if(mce.Arguments.Count == 2)
-            {
-                if (mce.Method.Name.Equals("Contains"))
-                    return $"({ExpressionToSql(mce.Arguments[1])} in {ExpressionToSql(mce.Arguments[0])})";
-                else if (mce.Method.Name.Equals("EndsWith"))
-                    return $"({ExpressionToSql(mce.Arguments[1])} like %'{ExpressionToSql(mce.Arguments[0])})'";
-                else if (mce.Method.Name.Equals("StartsWith"))
-                    return $"({ExpressionToSql(mce.Arguments[1])} like '{ExpressionToSql(mce.Arguments[0])}'%)";
-            }
-            
-            return null;
         }
 
         public static string ExpressionToSql(NewArrayExpression nae)
@@ -152,6 +154,7 @@ namespace StreamlineFrame.Web.Common
             }
             return tmpstr.ToString(0, tmpstr.Length - 1);
         }
+
         public static string ExpressionToSql(UnaryExpression ue)
         {
             return ExpressionToSql(ue.Operand);
