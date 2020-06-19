@@ -29,7 +29,7 @@ namespace StreamlineFrame.Web.Common
         private const string SqlUpdate = @"UPDATE {0} SET {1} WHERE {2}\n";
 
         //查
-        private const string SqlQuery = @"SELECT * FROM {0} WHERE {1}\n";
+        private const string SqlQuery = @"SELECT {0} FROM {1} WHERE {2}\n";
 
         public BaseRepository(string db)
         {
@@ -44,7 +44,7 @@ namespace StreamlineFrame.Web.Common
         /// <returns>是否包涵</returns>
         public bool Has(Expression<Func<TModel, bool>> exp)
         {
-            var sql = string.Format(SqlQuery, this.GetDBName(typeof(TModel)), ExpressionHelper.ExpressionToSql(exp));
+            var sql = string.Format(SqlQuery, "*", this.GetDBName(typeof(TModel)), ExpressionHelper.ExpressionToSql(exp));
             using (var reader = SqlHelper.ExecuteReader(this.ConnectionString, CommandType.Text, sql, null))
                 return reader.HasRows;
         }
@@ -65,10 +65,10 @@ namespace StreamlineFrame.Web.Common
         /// 获取实体
         /// </summary>
         /// <param name="exp">Lambda表达式</param>
-        /// <returns></returns>
+        /// <returns>实体</returns>
         public TModel Get(Expression<Func<TModel, bool>> exp)
         {
-            var sql = string.Format(SqlQuery, this.GetDBName(typeof(TModel)), ExpressionHelper.ExpressionToSql(exp));
+            var sql = string.Format(SqlQuery, "*", this.GetDBName(typeof(TModel)), ExpressionHelper.ExpressionToSql(exp));
             return this.Get(sql, null);
         }
 
@@ -77,7 +77,7 @@ namespace StreamlineFrame.Web.Common
         /// </summary>
         /// <param name="sql">sql语句</param>
         /// <param name="para">sql注入参数</param>
-        /// <returns></returns>
+        /// <returns>实体</returns>
         public TModel Get(string sql, SqlParameter[] para)
         {
             using (var reader = SqlHelper.ExecuteReader(this.ConnectionString, CommandType.Text, sql, para))
@@ -90,24 +90,11 @@ namespace StreamlineFrame.Web.Common
         }
 
         /// <summary>
-        /// 获取某字段
-        /// </summary>
-        /// <param name="sql">sql语句</param>
-        /// <param name="para">sql注入参数</param>
-        /// <param name="name">字段名</param>
-        /// <returns></returns>
-        public string GetField(string sql, SqlParameter[] para, string name)
-        {
-            using (var reader = SqlHelper.ExecuteReader(this.ConnectionString, CommandType.Text, sql, para))
-                return reader.Read() ? reader[name].ToString() : null;
-        }
-
-        /// <summary>
         /// 获取集合
         /// </summary>
         /// <param name="sql">sql语句</param>
         /// <param name="para">sql注入参数</param>
-        /// <returns>该实体数据集合</returns>
+        /// <returns>实体数据集合</returns>
         public IEnumerable<TModel> GetList(string sql = null, SqlParameter[] para = null)
         {
             var list = new List<TModel>();
@@ -132,7 +119,7 @@ namespace StreamlineFrame.Web.Common
         /// 获取集合
         /// </summary>
         /// <param name="exp">Lambda表达式</param>
-        /// <returns>该实体数据集合</returns>
+        /// <returns>实体数据集合</returns>
         public IEnumerable<TModel> GetList(Expression<Func<TModel, bool>> exp)
         {
             var list = new List<TModel>();
@@ -223,7 +210,7 @@ namespace StreamlineFrame.Web.Common
         /// </summary>
         /// <param name="sql">sql语句</param>
         /// <param name="para">sql注入参数</param>
-        /// <returns>添加成功行数</returns>
+        /// <returns>添加修改行数</returns>
         public int Update(string sql, SqlParameter[] para)
         {
             return SqlHelper.ExecuteNonQuery(this.ConnectionString, CommandType.Text, sql, para);
@@ -233,7 +220,7 @@ namespace StreamlineFrame.Web.Common
         /// 修改实体
         /// </summary>
         /// <param name="model">sql语句</param>
-        /// <returns>添加成功行数</returns>
+        /// <returns>添加修改行数</returns>
         public int Update(TModel model)
         {
             if (model == null)
@@ -249,7 +236,7 @@ namespace StreamlineFrame.Web.Common
         /// 批量修改
         /// </summary>
         /// <param name="list">集合</param>
-        /// <returns>修改成功行数</returns>
+        /// <returns>修改修改行数</returns>
         public int BatchUpdate(IEnumerable<TModel> list)
         {
             if (!list?.Any() ?? true)
@@ -270,7 +257,7 @@ namespace StreamlineFrame.Web.Common
         /// </summary>
         /// <param name="sql">sql语句</param>
         /// <param name="para">sql注入参数</param>
-        /// <returns>添加成功行数</returns>
+        /// <returns>添加删除行数</returns>
         public int Delete(string sql, SqlParameter[] para)
         {
             return SqlHelper.ExecuteNonQuery(this.ConnectionString, CommandType.Text, sql, para);
@@ -291,7 +278,7 @@ namespace StreamlineFrame.Web.Common
         /// 删除实体
         /// </summary>
         /// <param name="model">实体</param>
-        /// <returns>添加成功行数</returns>
+        /// <returns>添加删除行数</returns>
         public int Delete(TModel model)
         {
             if (model == null)
@@ -307,7 +294,7 @@ namespace StreamlineFrame.Web.Common
         /// 批量删除
         /// </summary>
         /// <param name="list">集合</param>
-        /// <returns></returns>
+        /// <returns>添加删除行数</returns>
         public int BatchDelete(IEnumerable<TModel> list)
         {
             if (!list?.Any() ?? true)
