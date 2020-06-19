@@ -5,7 +5,7 @@ using System.Text;
 
 namespace StreamlineFrame.Web.Common
 {
-    public class ExpressionHelper
+    public static class ExpressionHelper
     {
         public static string GetOperator(ExpressionType expressiontype)
         {
@@ -77,7 +77,7 @@ namespace StreamlineFrame.Web.Common
             }
             else
             {
-                throw new Exception("没有此类型解析！");
+                throw new NotSupportedException(exp.NodeType + " is not supported!");
             }
         }
 

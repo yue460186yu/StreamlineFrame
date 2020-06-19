@@ -44,7 +44,7 @@ namespace StreamlineFrame.Web.Common
         /// <returns>是否包涵</returns>
         public bool Has(Expression<Func<TModel, bool>> exp)
         {
-            var sql = string.Format(SqlQuery, "*", this.GetDBName(typeof(TModel)), ExpressionHelper.ExpressionToSql(exp));
+            var sql = string.Format(SqlQuery, "*", this.GetDBName(typeof(TModel)), ExpressionHelper.ExpressionToSql(exp.Body));
             using (var reader = SqlHelper.ExecuteReader(this.ConnectionString, CommandType.Text, sql, null))
                 return reader.HasRows;
         }
@@ -68,7 +68,7 @@ namespace StreamlineFrame.Web.Common
         /// <returns>实体</returns>
         public TModel Get(Expression<Func<TModel, bool>> exp)
         {
-            var sql = string.Format(SqlQuery, "*", this.GetDBName(typeof(TModel)), ExpressionHelper.ExpressionToSql(exp));
+            var sql = string.Format(SqlQuery, "*", this.GetDBName(typeof(TModel)), ExpressionHelper.ExpressionToSql(exp.Body));
             return this.Get(sql, null);
         }
 
@@ -123,7 +123,7 @@ namespace StreamlineFrame.Web.Common
         public IEnumerable<TModel> GetList(Expression<Func<TModel, bool>> exp)
         {
             var list = new List<TModel>();
-            var sql = string.Format(SqlQuery, "*", this.GetDBName(typeof(TModel)), ExpressionHelper.ExpressionToSql(exp));
+            var sql = string.Format(SqlQuery, "*", this.GetDBName(typeof(TModel)), ExpressionHelper.ExpressionToSql(exp.Body));
 
             using (var reader = SqlHelper.ExecuteReader(this.ConnectionString, CommandType.Text, sql, null))
             {
@@ -270,7 +270,7 @@ namespace StreamlineFrame.Web.Common
         /// <returns></returns>
         public int BatchDelete(Expression<Func<TModel, bool>> exp)
         {
-            var sql = string.Format(SqlDelete, this.GetDBName(typeof(TModel)), ExpressionHelper.ExpressionToSql(exp));
+            var sql = string.Format(SqlDelete, this.GetDBName(typeof(TModel)), ExpressionHelper.ExpressionToSql(exp.Body));
             return this.Delete(sql, null);
         }
 
