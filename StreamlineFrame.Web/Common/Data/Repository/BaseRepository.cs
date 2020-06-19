@@ -99,7 +99,7 @@ namespace StreamlineFrame.Web.Common
         {
             var list = new List<TModel>();
             if (string.IsNullOrWhiteSpace(sql))
-                sql = string.Format(SqlQuery, this.GetDBName(typeof(TModel)), "0=0");
+                sql = string.Format(SqlQuery, "*", this.GetDBName(typeof(TModel)), "0=0");
 
             using (var reader = SqlHelper.ExecuteReader(this.ConnectionString, CommandType.Text, sql, null))
             {
@@ -123,7 +123,7 @@ namespace StreamlineFrame.Web.Common
         public IEnumerable<TModel> GetList(Expression<Func<TModel, bool>> exp)
         {
             var list = new List<TModel>();
-            var sql = string.Format(SqlQuery, this.GetDBName(typeof(TModel)), ExpressionHelper.ExpressionToSql(exp));
+            var sql = string.Format(SqlQuery, "*", this.GetDBName(typeof(TModel)), ExpressionHelper.ExpressionToSql(exp));
 
             using (var reader = SqlHelper.ExecuteReader(this.ConnectionString, CommandType.Text, sql, null))
             {

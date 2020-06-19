@@ -51,7 +51,6 @@ namespace StreamlineFrame.Web.Common
 
         public static string ExpressionToSql(Expression exp)
         {
-            var sql = string.Empty;
             if (exp is BinaryExpression)
             {
                 return ExpressionToSql((BinaryExpression)exp);
@@ -76,8 +75,10 @@ namespace StreamlineFrame.Web.Common
             {
                 return ExpressionToSql((UnaryExpression)exp);
             }
-
-            return sql;
+            else
+            {
+                throw new Exception("没有此类型解析！");
+            }
         }
 
         public static string ExpressionToSql(BinaryExpression be)
