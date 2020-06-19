@@ -29,7 +29,7 @@ namespace StreamlineFrame.Web.Common
         private const string SqlUpdate = "UPDATE {0} SET {1} WHERE {2}\n";
 
         //查
-        private const string SqlQuery = "SELECT * FROM {1} WHERE {2}\n";
+        private const string SqlQuery = "SELECT * FROM {0} WHERE {1}\n";
 
         public BaseRepository(string db)
         {
