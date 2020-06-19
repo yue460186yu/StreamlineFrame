@@ -26,7 +26,7 @@ namespace StreamlineFrame.Web.Common
         private readonly string SqlDelete = @"DELETE FROM {0} WHERE {1}\n";
 
         //改
-        private readonly string SqlUpdate = @"UPDATE {0} SET {1} WHERE {2}";
+        private readonly string SqlUpdate = @"UPDATE {0} SET {1} WHERE {2}\n";
 
         //查
         private readonly string SqlQuery = @"SELECT * FROM {0} WHERE {1}\n";
@@ -118,12 +118,8 @@ namespace StreamlineFrame.Web.Common
             {
                 if (reader.HasRows)
                 {
-                    TModel model;
                     while (reader.Read())
-                    {
-                        model = this.ModelFactory(reader);
-                        list.Add(model);
-                    }
+                        list.Add(this.ModelFactory(reader));
 
                     return list;
                 }
@@ -146,12 +142,8 @@ namespace StreamlineFrame.Web.Common
             {
                 if (reader.HasRows)
                 {
-                    TModel model;
                     while (reader.Read())
-                    {
-                        model = this.ModelFactory(reader);
-                        list.Add(model);
-                    }
+                        list.Add(this.ModelFactory(reader));
 
                     return list;
                 }
@@ -358,12 +350,8 @@ namespace StreamlineFrame.Web.Common
             {
                 var properties = typeof(TModel).GetProperties(BindingFlags.Instance | BindingFlags.Public);
                 foreach (var property in properties)
-                {
                     if (this.IsKey(property))
-                    {
                         where.Add($"{this.GetDBName(property)} = {property.GetValue(model)}");
-                    }
-                }
 
                 sql += string.Format(this.SqlDelete, this.GetDBName(typeof(TModel)), string.Join(" and ", where));
                 where.Clear();
