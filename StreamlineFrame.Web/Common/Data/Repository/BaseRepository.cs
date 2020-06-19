@@ -193,25 +193,7 @@ namespace StreamlineFrame.Web.Common
                 return 0;
 
             var para = new List<SqlParameter>();
-            var columns = new List<string>();
-            var values = new List<string>();
-
-            var properties = typeof(TModel).GetProperties(BindingFlags.Instance | BindingFlags.Public);
-            foreach (var property in properties)
-            {
-                if (this.IsSelfIncreasing(property))
-                    continue;
-
-                var value = property.GetValue(model);
-                if (value != null)
-                {
-                    columns.Add(this.GetDBName(property));
-                    values.Add($"@{property.Name}");
-                    para.Add(new SqlParameter($"@{property.Name}", value));
-                }
-            }
-
-            var sql = string.Format(this.SqlInsert, this.GetDBName(typeof(TModel)), string.Join(", ", columns), string.Join(", ", values));
+            var sql = this.SqlFactory(this.SqlInsert, model, para);
 
             return this.Insert(sql, para.ToArray());
         }
@@ -227,34 +209,43 @@ namespace StreamlineFrame.Web.Common
                 return 0;
 
             var para = new List<SqlParameter>();
-            var columns = new List<string>();
-            var values = new List<string>();
-            var sql = string.Empty;
-            var index = 0;
-            foreach (var model in list)
-            {
-                var properties = typeof(TModel).GetProperties(BindingFlags.Instance | BindingFlags.Public);
-                foreach (var property in properties)
-                {
-                    if (this.IsSelfIncreasing(property))
-                        continue;
-
-                    var value = property.GetValue(model);
-                    if (value != null)
-                    {
-                        columns.Add(this.GetDBName(property));
-                        values.Add($"@{property.Name}{index}");
-                        para.Add(new SqlParameter($"@{property.Name}{index}", value));
-                    }
-                }
-
-                sql += string.Format(this.SqlInsert, this.GetDBName(typeof(TModel)), string.Join(", ", columns), string.Join(", ", values));
-                columns.Clear();
-                values.Clear();
-                index++;
-            }
+            var sql = this.SqlFactory(this.SqlInsert, list, para);
 
             return this.Insert(sql, para.ToArray());
+        }
+
+        public virtual string SqlFactory(string sqlType, TModel model, List<SqlParameter> para, int index = 0)
+        {
+            var columns = new List<string>();
+            var values = new List<string>();
+            var properties = typeof(TModel).GetProperties(BindingFlags.Instance | BindingFlags.Public);
+            foreach (var property in properties)
+            {
+                if (this.IsSelfIncreasing(property))
+                    continue;
+
+                var value = property.GetValue(model);
+                if (value != null)
+                {
+                    columns.Add(this.GetDBName(property));
+                    var parastring = $"@{property.Name}{index}";
+                    values.Add(parastring);
+                    para.Add(new SqlParameter(parastring, value));
+                }
+            }
+
+            return string.Format(sqlType, this.GetDBName(typeof(TModel)), string.Join(", ", columns), string.Join(", ", values));
+        }
+
+        public virtual string SqlFactory(string sqlType, IEnumerable<TModel> list, List<SqlParameter> para)
+        {
+            var index = 0;
+            var sql = string.Empty;
+
+            foreach (var model in list)
+                sql += this.SqlFactory(this.SqlInsert, model, para, index++);
+
+            return sql;
         }
 
         #endregion
