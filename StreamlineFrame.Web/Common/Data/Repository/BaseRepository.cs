@@ -20,16 +20,16 @@ namespace StreamlineFrame.Web.Common
         private readonly string ConnectionString;
 
         //增
-        private readonly string SqlInsert = @"INSERT {0} ({1}) VALUES ({2})\n";
+        private const string SqlInsert = @"INSERT {0} ({1}) VALUES ({2})\n";
 
         //删
-        private readonly string SqlDelete = @"DELETE FROM {0} WHERE {1}\n";
+        private const string SqlDelete = @"DELETE FROM {0} WHERE {1}\n";
 
         //改
-        private readonly string SqlUpdate = @"UPDATE {0} SET {1} WHERE {2}\n";
+        private const string SqlUpdate = @"UPDATE {0} SET {1} WHERE {2}\n";
 
         //查
-        private readonly string SqlQuery = @"SELECT * FROM {0} WHERE {1}\n";
+        private const string SqlQuery = @"SELECT * FROM {0} WHERE {1}\n";
 
         public BaseRepository(string db)
         {
@@ -44,7 +44,7 @@ namespace StreamlineFrame.Web.Common
         /// <returns>是否包涵</returns>
         public bool Has(Expression<Func<TModel, bool>> exp)
         {
-            var sql = string.Format(this.SqlQuery, this.GetDBName(typeof(TModel)), ExpressionHelper.ExpressionToSql(exp));
+            var sql = string.Format(SqlQuery, this.GetDBName(typeof(TModel)), ExpressionHelper.ExpressionToSql(exp));
             using (var reader = SqlHelper.ExecuteReader(this.ConnectionString, CommandType.Text, sql, null))
                 return reader.HasRows;
         }
@@ -68,7 +68,7 @@ namespace StreamlineFrame.Web.Common
         /// <returns></returns>
         public TModel Get(Expression<Func<TModel, bool>> exp)
         {
-            var sql = string.Format(this.SqlQuery, this.GetDBName(typeof(TModel)), ExpressionHelper.ExpressionToSql(exp));
+            var sql = string.Format(SqlQuery, this.GetDBName(typeof(TModel)), ExpressionHelper.ExpressionToSql(exp));
             return this.Get(sql, null);
         }
 
@@ -112,7 +112,7 @@ namespace StreamlineFrame.Web.Common
         {
             var list = new List<TModel>();
             if (string.IsNullOrWhiteSpace(sql))
-                sql = string.Format(this.SqlQuery, this.GetDBName(typeof(TModel)), "0=0");
+                sql = string.Format(SqlQuery, this.GetDBName(typeof(TModel)), "0=0");
 
             using (var reader = SqlHelper.ExecuteReader(this.ConnectionString, CommandType.Text, sql, null))
             {
@@ -136,7 +136,7 @@ namespace StreamlineFrame.Web.Common
         public IEnumerable<TModel> GetList(Expression<Func<TModel, bool>> exp)
         {
             var list = new List<TModel>();
-            var sql = string.Format(this.SqlQuery, this.GetDBName(typeof(TModel)), ExpressionHelper.ExpressionToSql(exp));
+            var sql = string.Format(SqlQuery, this.GetDBName(typeof(TModel)), ExpressionHelper.ExpressionToSql(exp));
 
             using (var reader = SqlHelper.ExecuteReader(this.ConnectionString, CommandType.Text, sql, null))
             {
@@ -193,13 +193,13 @@ namespace StreamlineFrame.Web.Common
                 return 0;
 
             var para = new List<SqlParameter>();
-            var sql = this.SqlFactory(this.SqlInsert, model, para);
+            var sql = this.InsertSqlFactory(model, para);
 
             return this.Insert(sql, para.ToArray());
         }
 
         /// <summary>
-        /// 添加集合
+        /// 批量添加
         /// </summary>
         /// <param name="list">集合</param>
         /// <returns>添加成功行数</returns>
@@ -209,12 +209,132 @@ namespace StreamlineFrame.Web.Common
                 return 0;
 
             var para = new List<SqlParameter>();
-            var sql = this.SqlFactory(this.SqlInsert, list, para);
+            var sql = this.BatchInsertSqlFactory(list, para);
 
             return this.Insert(sql, para.ToArray());
         }
 
-        public virtual string SqlFactory(string sqlType, TModel model, List<SqlParameter> para, int index = 0)
+        #endregion
+
+        #region u
+
+        /// <summary>
+        /// 修改实体
+        /// </summary>
+        /// <param name="sql">sql语句</param>
+        /// <param name="para">sql注入参数</param>
+        /// <returns>添加成功行数</returns>
+        public int Update(string sql, SqlParameter[] para)
+        {
+            return SqlHelper.ExecuteNonQuery(this.ConnectionString, CommandType.Text, sql, para);
+        }
+
+        /// <summary>
+        /// 修改实体
+        /// </summary>
+        /// <param name="model">sql语句</param>
+        /// <returns>添加成功行数</returns>
+        public int Update(TModel model)
+        {
+            if (model == null)
+                return 0;
+
+            var para = new List<SqlParameter>();
+            var sql = this.UpdateSqlFactory(model, para);
+
+            return this.Update(sql, para.ToArray());
+        }
+
+        /// <summary>
+        /// 批量修改
+        /// </summary>
+        /// <param name="list">集合</param>
+        /// <returns>修改成功行数</returns>
+        public int BatchUpdate(IEnumerable<TModel> list)
+        {
+            if (!list?.Any() ?? true)
+                return 0;
+
+            var para = new List<SqlParameter>();
+            var sql = this.BatchUpdateSqlFactory(list, para);
+
+            return this.Update(sql, para.ToArray());
+        }
+
+        #endregion
+
+        #region d
+
+        /// <summary>
+        /// 删除实体
+        /// </summary>
+        /// <param name="sql">sql语句</param>
+        /// <param name="para">sql注入参数</param>
+        /// <returns>添加成功行数</returns>
+        public int Delete(string sql, SqlParameter[] para)
+        {
+            return SqlHelper.ExecuteNonQuery(this.ConnectionString, CommandType.Text, sql, para);
+        }
+
+        /// <summary>
+        /// 批量删除
+        /// </summary>
+        /// <param name="expr">Lambda表达式</param>
+        /// <returns></returns>
+        public int BatchDelete(Expression<Func<TModel, bool>> exp)
+        {
+            var sql = string.Format(SqlDelete, this.GetDBName(typeof(TModel)), ExpressionHelper.ExpressionToSql(exp));
+            return this.Delete(sql, null);
+        }
+
+        /// <summary>
+        /// 删除实体
+        /// </summary>
+        /// <param name="model">实体</param>
+        /// <returns>添加成功行数</returns>
+        public int Delete(TModel model)
+        {
+            if (model == null)
+                return 0;
+
+            var para = new List<SqlParameter>();
+            var sql = this.DeleteSqlFactory(model, para);
+
+            return this.Delete(sql, para.ToArray());
+        }
+
+        /// <summary>
+        /// 批量删除
+        /// </summary>
+        /// <param name="list">集合</param>
+        /// <returns></returns>
+        public int BatchDelete(IEnumerable<TModel> list)
+        {
+            if (!list?.Any() ?? true)
+                return 0;
+
+            var para = new List<SqlParameter>();
+            var sql = this.BatchDeleteSqlFactory(list, para);
+
+            return this.Delete(sql, para.ToArray());
+        }
+
+        #endregion
+
+        #region SQL工厂
+
+        public virtual string BatchInsertSqlFactory(IEnumerable<TModel> list, List<SqlParameter> para)
+        {
+            var index = 0;
+            var sql = string.Empty;
+
+            foreach (var model in list)
+                sql += this.InsertSqlFactory(model, para, index++);
+
+            return sql;
+        }
+
+        public virtual string InsertSqlFactory(TModel model, List<SqlParameter> para, int index = 0)
         {
             var columns = new List<string>();
             var values = new List<string>();
@@ -234,134 +354,78 @@ namespace StreamlineFrame.Web.Common
                 }
             }
 
-            return string.Format(sqlType, this.GetDBName(typeof(TModel)), string.Join(", ", columns), string.Join(", ", values));
+            return string.Format(SqlInsert, this.GetDBName(typeof(TModel)), string.Join(", ", columns), string.Join(", ", values));
         }
 
-        public virtual string SqlFactory(string sqlType, IEnumerable<TModel> list, List<SqlParameter> para)
+        public virtual string BatchUpdateSqlFactory(IEnumerable<TModel> list, List<SqlParameter> para)
         {
             var index = 0;
             var sql = string.Empty;
 
             foreach (var model in list)
-                sql += this.SqlFactory(this.SqlInsert, model, para, index++);
+                sql += this.UpdateSqlFactory(model, para, index++);
 
             return sql;
         }
 
-        #endregion
-
-        #region u
-
-        /// <summary>
-        /// 修改实体
-        /// </summary>
-        /// <param name="model">sql语句</param>
-        /// <returns>添加成功行数</returns>
-        public int Update(TModel model)
+        public virtual string UpdateSqlFactory(TModel model, List<SqlParameter> para, int index = 0)
         {
             var set = new List<string>();
             var where = new List<string>();
-
             var properties = typeof(TModel).GetProperties(BindingFlags.Instance | BindingFlags.Public);
             foreach (var property in properties)
             {
-                if (this.IsKey(property))
-                    where.Add($"{this.GetDBName(property)} = {property.GetValue(model)}");
-                else
-                    if (property.GetValue(model) != null) set.Add($"{this.GetDBName(property)} = {property.GetValue(model)}");
-            }
-
-            var sql = string.Format(this.SqlUpdate, this.GetDBName(typeof(TModel)), string.Join(", ", set), string.Join(" and ", where));
-            return this.Update(sql, null);
-        }
-
-        /// <summary>
-        /// 修改实体
-        /// </summary>
-        /// <param name="sql">sql语句</param>
-        /// <param name="para">sql注入参数</param>
-        /// <returns>添加成功行数</returns>
-        public int Update(string sql, SqlParameter[] para)
-        {
-            return SqlHelper.ExecuteNonQuery(this.ConnectionString, CommandType.Text, sql, para);
-        }
-
-        #endregion
-
-        #region d
-
-        /// <summary>
-        /// 删除实体
-        /// </summary>
-        /// <param name="sql">sql语句</param>
-        /// <param name="para">sql注入参数</param>
-        /// <returns>添加成功行数</returns>
-        public int Delete(string sql, SqlParameter[] para)
-        {
-            return SqlHelper.ExecuteNonQuery(this.ConnectionString, CommandType.Text, sql, para);
-        }
-
-        /// <summary>
-        /// 删除实体
-        /// </summary>
-        /// <param name="model">实体</param>
-        /// <returns>添加成功行数</returns>
-        public int Delete(TModel model)
-        {
-            var para = new List<SqlParameter>();
-            var where = new List<string>();
-
-            var properties = model.GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public);
-            foreach (var property in properties)
-            {
-                if (this.IsKey(property))
+                var value = property.GetValue(model);
+                if (value != null)
                 {
-                    where.Add($"{this.GetDBName(property)} = @{property.Name}");
-                    para.Add(new SqlParameter($"@{property.Name}", property.GetValue(model)));
+                    var parastring = $"@{property.Name}{index}";
+                    if (this.IsKey(property))
+                    {
+                        where.Add($"{this.GetDBName(property)} = {parastring}");
+                        para.Add(new SqlParameter(parastring, value));
+                    }
+                    else
+                    {
+                        set.Add($"{this.GetDBName(property)} = {parastring}");
+                        para.Add(new SqlParameter(parastring, value));
+                    }
                 }
             }
 
-            var sql = string.Format(this.SqlDelete, this.GetDBName(typeof(TModel)), string.Join(" and ", where));
-            return this.Delete(sql, para.ToArray());
+            return string.Format(SqlUpdate, this.GetDBName(typeof(TModel)), string.Join(", ", set), string.Join(" and ", where));
         }
 
-        /// <summary>
-        /// 批量删除
-        /// </summary>
-        /// <param name="list">集合</param>
-        /// <returns></returns>
-        public int BatchDelete(IEnumerable<TModel> list)
+        public virtual string BatchDeleteSqlFactory(IEnumerable<TModel> list, List<SqlParameter> para)
         {
-            if (!list?.Any() ?? true)
-                return 0;
-
-            var where = new List<string>();
+            var index = 0;
             var sql = string.Empty;
-            foreach (var model in list)
-            {
-                var properties = typeof(TModel).GetProperties(BindingFlags.Instance | BindingFlags.Public);
-                foreach (var property in properties)
-                    if (this.IsKey(property))
-                        where.Add($"{this.GetDBName(property)} = {property.GetValue(model)}");
 
-                sql += string.Format(this.SqlDelete, this.GetDBName(typeof(TModel)), string.Join(" and ", where));
-                where.Clear();
+            foreach (var model in list)
+                sql += this.DeleteSqlFactory(model, para, index++);
+
+            return sql;
+        }
+
+        public virtual string DeleteSqlFactory(TModel model, List<SqlParameter> para, int index = 0)
+        {
+            var where = new List<string>();
+            var properties = model.GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public);
+            foreach (var property in properties)
+            {
+                var value = property.GetValue(model);
+                if (value != null)
+                {
+                    var parastring = $"@{property.Name}{index}";
+                    if (this.IsKey(property))
+                    {
+                        where.Add($"{this.GetDBName(property)} = {parastring}");
+                        para.Add(new SqlParameter(parastring, property.GetValue(model)));
+                    }
+                }
             }
 
-            return this.Delete(sql, null);
+            return string.Format(SqlDelete, this.GetDBName(typeof(TModel)), string.Join(" and ", where));
         }
-
-        /// <summary>
-        /// 批量删除
-        /// </summary>
-        /// <param name="expr">Lambda表达式</param>
-        /// <returns></returns>
-        public int BatchDelete(Expression<Func<TModel, bool>> exp)
-        {
-            var sql = string.Format(this.SqlDelete, this.GetDBName(typeof(TModel)), ExpressionHelper.ExpressionToSql(exp));
-            return this.Delete(sql, null);
-        }
-
         #endregion
 
         /// <summary>
