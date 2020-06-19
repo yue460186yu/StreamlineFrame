@@ -20,16 +20,16 @@ namespace StreamlineFrame.Web.Common
         private readonly string ConnectionString;
 
         //增
-        private const string SqlInsert = @"INSERT {0} ({1}) VALUES ({2})\n";
+        private const string SqlInsert = "INSERT {0} ({1}) VALUES ({2})\n";
 
         //删
-        private const string SqlDelete = @"DELETE FROM {0} WHERE {1}\n";
+        private const string SqlDelete = "DELETE FROM {0} WHERE {1}\n";
 
         //改
-        private const string SqlUpdate = @"UPDATE {0} SET {1} WHERE {2}\n";
+        private const string SqlUpdate = "UPDATE {0} SET {1} WHERE {2}\n";
 
         //查
-        private const string SqlQuery = @"SELECT {0} FROM {1} WHERE {2}\n";
+        private const string SqlQuery = "SELECT * FROM {1} WHERE {2}\n";
 
         public BaseRepository(string db)
         {
@@ -44,7 +44,7 @@ namespace StreamlineFrame.Web.Common
         /// <returns>是否包涵</returns>
         public bool Has(Expression<Func<TModel, bool>> exp)
         {
-            var sql = string.Format(SqlQuery, "*", this.GetDBName(typeof(TModel)), ExpressionHelper.ExpressionToSql(exp.Body));
+            var sql = string.Format(SqlQuery, this.GetDBName(typeof(TModel)), ExpressionHelper.ExpressionToSql(exp.Body));
             using (var reader = SqlHelper.ExecuteReader(this.ConnectionString, CommandType.Text, sql, null))
                 return reader.HasRows;
         }
@@ -68,7 +68,7 @@ namespace StreamlineFrame.Web.Common
         /// <returns>实体</returns>
         public TModel Get(Expression<Func<TModel, bool>> exp)
         {
-            var sql = string.Format(SqlQuery, "*", this.GetDBName(typeof(TModel)), ExpressionHelper.ExpressionToSql(exp.Body));
+            var sql = string.Format(SqlQuery, this.GetDBName(typeof(TModel)), ExpressionHelper.ExpressionToSql(exp.Body));
             return this.Get(sql, null);
         }
 
@@ -99,7 +99,7 @@ namespace StreamlineFrame.Web.Common
         {
             var list = new List<TModel>();
             if (string.IsNullOrWhiteSpace(sql))
-                sql = string.Format(SqlQuery, "*", this.GetDBName(typeof(TModel)), "0=0");
+                sql = string.Format(SqlQuery, this.GetDBName(typeof(TModel)), "0=0");
 
             using (var reader = SqlHelper.ExecuteReader(this.ConnectionString, CommandType.Text, sql, null))
             {
@@ -123,7 +123,7 @@ namespace StreamlineFrame.Web.Common
         public IEnumerable<TModel> GetList(Expression<Func<TModel, bool>> exp)
         {
             var list = new List<TModel>();
-            var sql = string.Format(SqlQuery, "*", this.GetDBName(typeof(TModel)), ExpressionHelper.ExpressionToSql(exp.Body));
+            var sql = string.Format(SqlQuery, this.GetDBName(typeof(TModel)), ExpressionHelper.ExpressionToSql(exp.Body));
 
             using (var reader = SqlHelper.ExecuteReader(this.ConnectionString, CommandType.Text, sql, null))
             {
