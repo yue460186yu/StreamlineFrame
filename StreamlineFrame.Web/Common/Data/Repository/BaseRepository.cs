@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
 using System.Data.SqlClient;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 
@@ -196,6 +197,9 @@ namespace StreamlineFrame.Web.Common
         /// <returns>添加成功行数</returns>
         public int Insert(TModel model)
         {
+            if (model == null)
+                return 0;
+
             var para = new List<SqlParameter>();
             var columns = new List<string>();
             var values = new List<string>();
@@ -227,9 +231,14 @@ namespace StreamlineFrame.Web.Common
         /// <returns>添加成功行数</returns>
         public int BatchInsert(IEnumerable<TModel> list)
         {
+            if (!list?.Any() ?? true)
+                return 0;
+
+            var para = new List<SqlParameter>();
             var columns = new List<string>();
             var values = new List<string>();
             var sql = string.Empty;
+            var index = 0;
             foreach (var model in list)
             {
                 var properties = typeof(TModel).GetProperties(BindingFlags.Instance | BindingFlags.Public);
@@ -242,14 +251,18 @@ namespace StreamlineFrame.Web.Common
                     if (value != null)
                     {
                         columns.Add(this.GetDBName(property));
-                        values.Add($"{value}");
+                        values.Add($"@{property.Name}{index}");
+                        para.Add(new SqlParameter($"@{property.Name}{index}", value));
                     }
                 }
 
                 sql += string.Format(this.SqlInsert, this.GetDBName(typeof(TModel)), string.Join(", ", columns), string.Join(", ", values));
+                columns.Clear();
+                values.Clear();
+                index++;
             }
 
-            return this.Insert(sql, null);
+            return this.Insert(sql, para.ToArray());
         }
 
         #endregion
@@ -336,6 +349,9 @@ namespace StreamlineFrame.Web.Common
         /// <returns></returns>
         public int BatchDelete(IEnumerable<TModel> list)
         {
+            if (!list?.Any() ?? true)
+                return 0;
+
             var where = new List<string>();
             var sql = string.Empty;
             foreach (var model in list)
@@ -350,7 +366,9 @@ namespace StreamlineFrame.Web.Common
                 }
 
                 sql += string.Format(this.SqlDelete, this.GetDBName(typeof(TModel)), string.Join(" and ", where));
+                where.Clear();
             }
+
             return this.Delete(sql, null);
         }
 
