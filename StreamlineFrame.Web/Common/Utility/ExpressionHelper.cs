@@ -124,9 +124,9 @@ namespace StreamlineFrame.Web.Common
             {
                 case "Contains":
                     if (mce.Arguments.Count == 1)
-                        return $"({ExpressionToSql(mce.Object)} in {ExpressionToSql(mce.Arguments[0])})";
+                        return $"({ExpressionToSql(mce.Object)} in ({ExpressionToSql(mce.Arguments[0])}))";
                     else
-                        return $"({ExpressionToSql(mce.Arguments[1])} in {ExpressionToSql(mce.Arguments[0])})";
+                        return $"({ExpressionToSql(mce.Arguments[1])} in ({ExpressionToSql(mce.Arguments[0])}))";
 
                 case "StartsWith":
                     if (mce.Arguments.Count == 1)
