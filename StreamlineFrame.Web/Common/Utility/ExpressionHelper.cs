@@ -130,15 +130,15 @@ namespace StreamlineFrame.Web.Common
 
                 case "StartsWith":
                     if (mce.Arguments.Count == 1)
-                        return $"({ExpressionToSql(mce.Object)} like '{ExpressionToSql(mce.Arguments[0])}'%)";
+                        return $"({ExpressionToSql(mce.Object)} like '{ExpressionToSql(mce.Arguments[0]).Replace("'", string.Empty)}%')";
                     else
-                        return $"({ExpressionToSql(mce.Arguments[1])} like '{ExpressionToSql(mce.Arguments[0])}'%)";
+                        return $"({ExpressionToSql(mce.Arguments[1])} like '{ExpressionToSql(mce.Arguments[0]).Replace("'", string.Empty)}%')";
 
                 case "EndsWith":
                     if (mce.Arguments.Count == 1)
-                        return $"({ExpressionToSql(mce.Object)} like %'{ExpressionToSql(mce.Arguments[0])})'";
+                        return $"({ExpressionToSql(mce.Object)} like '%{ExpressionToSql(mce.Arguments[0]).Replace("'", string.Empty)})'";
                     else
-                        return $"({ExpressionToSql(mce.Arguments[1])} like %'{ExpressionToSql(mce.Arguments[0])})'";
+                        return $"({ExpressionToSql(mce.Arguments[1])} like '%{ExpressionToSql(mce.Arguments[0]).Replace("'", string.Empty)})'";
 
                 default:
                     throw new NotSupportedException(mce.NodeType + " is not supported!");
