@@ -164,7 +164,7 @@ namespace StreamlineFrame.Web.Common
         /// <param name="sql">sql语句</param>
         /// <param name="para">sql注入参数</param>
         /// <returns>添加成功行数</returns>
-        public int Insert(string sql, SqlParameter[] para)
+        public int Insert(string sql, SqlParameter[] para = null)
         {
             return Convert.ToInt32(SqlHelper.ExecuteScalar(this.ConnectionString, CommandType.Text, sql, para));
         }
@@ -179,10 +179,9 @@ namespace StreamlineFrame.Web.Common
             if (model == null)
                 return 0;
 
-            var para = new List<SqlParameter>();
-            var sql = this.InsertSqlFactory(model, para);
+            var sql = this.InsertSqlFactory(model);
 
-            return this.Insert(sql, para.ToArray());
+            return this.Insert(sql);
         }
 
         /// <summary>
@@ -195,10 +194,9 @@ namespace StreamlineFrame.Web.Common
             if (!list?.Any() ?? true)
                 return 0;
 
-            var para = new List<SqlParameter>();
-            var sql = this.BatchInsertSqlFactory(list, para);
+            var sql = this.BatchInsertSqlFactory(list);
 
-            return this.Insert(sql, para.ToArray());
+            return this.Insert(sql);
         }
 
         #endregion
@@ -211,7 +209,7 @@ namespace StreamlineFrame.Web.Common
         /// <param name="sql">sql语句</param>
         /// <param name="para">sql注入参数</param>
         /// <returns>添加修改行数</returns>
-        public int Update(string sql, SqlParameter[] para)
+        public int Update(string sql, SqlParameter[] para = null)
         {
             return SqlHelper.ExecuteNonQuery(this.ConnectionString, CommandType.Text, sql, para);
         }
@@ -226,10 +224,9 @@ namespace StreamlineFrame.Web.Common
             if (model == null)
                 return 0;
 
-            var para = new List<SqlParameter>();
-            var sql = this.UpdateSqlFactory(model, para);
+            var sql = this.UpdateSqlFactory(model);
 
-            return this.Update(sql, para.ToArray());
+            return this.Update(sql);
         }
 
         /// <summary>
@@ -242,10 +239,9 @@ namespace StreamlineFrame.Web.Common
             if (!list?.Any() ?? true)
                 return 0;
 
-            var para = new List<SqlParameter>();
-            var sql = this.BatchUpdateSqlFactory(list, para);
+            var sql = this.BatchUpdateSqlFactory(list);
 
-            return this.Update(sql, para.ToArray());
+            return this.Update(sql);
         }
 
         #endregion
@@ -258,7 +254,7 @@ namespace StreamlineFrame.Web.Common
         /// <param name="sql">sql语句</param>
         /// <param name="para">sql注入参数</param>
         /// <returns>添加删除行数</returns>
-        public int Delete(string sql, SqlParameter[] para)
+        public int Delete(string sql, SqlParameter[] para = null)
         {
             return SqlHelper.ExecuteNonQuery(this.ConnectionString, CommandType.Text, sql, para);
         }
@@ -271,7 +267,7 @@ namespace StreamlineFrame.Web.Common
         public int BatchDelete(Expression<Func<TModel, bool>> exp)
         {
             var sql = string.Format(SqlDelete, this.GetDBName(typeof(TModel)), ExpressionHelper.ExpressionToSql(exp.Body));
-            return this.Delete(sql, null);
+            return this.Delete(sql);
         }
 
         /// <summary>
@@ -284,10 +280,9 @@ namespace StreamlineFrame.Web.Common
             if (model == null)
                 return 0;
 
-            var para = new List<SqlParameter>();
-            var sql = this.DeleteSqlFactory(model, para);
+            var sql = this.DeleteSqlFactory(model);
 
-            return this.Delete(sql, para.ToArray());
+            return this.Delete(sql);
         }
 
         /// <summary>
@@ -300,28 +295,26 @@ namespace StreamlineFrame.Web.Common
             if (!list?.Any() ?? true)
                 return 0;
 
-            var para = new List<SqlParameter>();
-            var sql = this.BatchDeleteSqlFactory(list, para);
+            var sql = this.BatchDeleteSqlFactory(list);
 
-            return this.Delete(sql, para.ToArray());
+            return this.Delete(sql);
         }
 
         #endregion
 
         #region SQL工厂
 
-        public virtual string BatchInsertSqlFactory(IEnumerable<TModel> list, List<SqlParameter> para)
+        public virtual string BatchInsertSqlFactory(IEnumerable<TModel> list)
         {
-            var index = 0;
             var sql = string.Empty;
 
             foreach (var model in list)
-                sql += this.InsertSqlFactory(model, para, index++);
+                sql += this.InsertSqlFactory(model);
 
             return sql;
         }
 
-        public virtual string InsertSqlFactory(TModel model, List<SqlParameter> para, int index = 0)
+        public virtual string InsertSqlFactory(TModel model)
         {
             var columns = new List<string>();
             var values = new List<string>();
@@ -335,27 +328,28 @@ namespace StreamlineFrame.Web.Common
                 if (value != null)
                 {
                     columns.Add(this.GetDBName(property));
-                    var parastring = $"@{property.Name}{index}";
-                    values.Add(parastring);
-                    para.Add(new SqlParameter(parastring, value));
+
+                    if (value is ValueType)
+                        values.Add($"{value}");
+                    else
+                        values.Add($"'{value.ToString()}'");
                 }
             }
 
             return string.Format(SqlInsert, this.GetDBName(typeof(TModel)), string.Join(", ", columns), string.Join(", ", values));
         }
 
-        public virtual string BatchUpdateSqlFactory(IEnumerable<TModel> list, List<SqlParameter> para)
+        public virtual string BatchUpdateSqlFactory(IEnumerable<TModel> list)
         {
-            var index = 0;
             var sql = string.Empty;
 
             foreach (var model in list)
-                sql += this.UpdateSqlFactory(model, para, index++);
+                sql += this.UpdateSqlFactory(model);
 
             return sql;
         }
 
-        public virtual string UpdateSqlFactory(TModel model, List<SqlParameter> para, int index = 0)
+        public virtual string UpdateSqlFactory(TModel model)
         {
             var set = new List<string>();
             var where = new List<string>();
@@ -365,16 +359,19 @@ namespace StreamlineFrame.Web.Common
                 var value = property.GetValue(model);
                 if (value != null)
                 {
-                    var parastring = $"@{property.Name}{index}";
                     if (this.IsKey(property))
                     {
-                        where.Add($"{this.GetDBName(property)} = {parastring}");
-                        para.Add(new SqlParameter(parastring, value));
+                        if (value is ValueType)
+                            where.Add($"{this.GetDBName(property)} = {value}");
+                        else
+                            where.Add($"{this.GetDBName(property)} = '{value.ToString()}'");
                     }
                     else
                     {
-                        set.Add($"{this.GetDBName(property)} = {parastring}");
-                        para.Add(new SqlParameter(parastring, value));
+                        if (value is ValueType)
+                            set.Add($"{this.GetDBName(property)} = {value}");
+                        else
+                            set.Add($"{this.GetDBName(property)} = '{value.ToString()}'");
                     }
                 }
             }
@@ -382,33 +379,28 @@ namespace StreamlineFrame.Web.Common
             return string.Format(SqlUpdate, this.GetDBName(typeof(TModel)), string.Join(", ", set), string.Join(" and ", where));
         }
 
-        public virtual string BatchDeleteSqlFactory(IEnumerable<TModel> list, List<SqlParameter> para)
+        public virtual string BatchDeleteSqlFactory(IEnumerable<TModel> list)
         {
-            var index = 0;
             var sql = string.Empty;
 
             foreach (var model in list)
-                sql += this.DeleteSqlFactory(model, para, index++);
+                sql += this.DeleteSqlFactory(model);
 
             return sql;
         }
 
-        public virtual string DeleteSqlFactory(TModel model, List<SqlParameter> para, int index = 0)
+        public virtual string DeleteSqlFactory(TModel model)
         {
             var where = new List<string>();
             var properties = model.GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public);
             foreach (var property in properties)
             {
                 var value = property.GetValue(model);
-                if (value != null)
-                {
-                    var parastring = $"@{property.Name}{index}";
-                    if (this.IsKey(property))
-                    {
-                        where.Add($"{this.GetDBName(property)} = {parastring}");
-                        para.Add(new SqlParameter(parastring, property.GetValue(model)));
-                    }
-                }
+                if (value != null && this.IsKey(property))
+                    if (value is ValueType)
+                        where.Add($"{this.GetDBName(property)} = {value}");
+                    else
+                        where.Add($"{this.GetDBName(property)} = '{value.ToString()}'");
             }
 
             return string.Format(SqlDelete, this.GetDBName(typeof(TModel)), string.Join(" and ", where));
